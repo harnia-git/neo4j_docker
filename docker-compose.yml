@@ -1,0 +1,46 @@
+services:
+  neo4j:
+    image: neo4j:4.4.27
+    container_name: my_neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./data/neo4j:/data
+      - ./logs/neo4j:/logs
+      - ./neo4j_config/neo4j.conf:/conf/neo4j.conf
+    environment:
+      - NEO4J_HOST=neo4j
+      - NEO4J_PORT=7687
+      - NEO4J_USER=${NEO4J_USER}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=1G
+    networks:
+      - neo4j_network
+
+  python:
+    build:
+      context: .
+      dockerfile: ./python_docker/Dockerfile
+    container_name: my_python3
+    volumes:
+      - ./app:/app
+      - ./logs/python:/logs
+    environment:
+      - NEO4J_HOST=neo4j
+      - NEO4J_PORT=7687
+      - NEO4J_USER=${NEO4J_USER}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+    depends_on:
+      - neo4j
+    networks:
+      - neo4j_network
+    command: tail -f /dev/null  # コンテナを起動状態に保つためのダミーコマンド
+
+networks:
+  neo4j_network:
+    driver: bridge
